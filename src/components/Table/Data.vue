@@ -1,19 +1,19 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 import { ref, computed } from 'vue';
 import TableHeader from './Header.vue';
 import TableBody from './Body.vue';
 import TableSearch from './Search.vue';
 import TablePagination from './Pagination.vue';
-import TableChecxbox from './Checxbox.vue';
 
 const props = defineProps({
   data: {
     type: Array,
-    default: [],
+    required: true
   },
   columns: {
     type: Array,
-    default: []
+    required: true
   },
   perPage: {
     type: Number,
@@ -49,9 +49,9 @@ const props = defineProps({
   },
   options: {
     type: Object,
-    default: {
+    default: () => ({
       rowTransition: 'fade'
-    }
+    })
   }
 });
 
@@ -64,12 +64,12 @@ const order = ref(props.initialSortOrder);
 
 const computedData = computed(() => {
   let rows = props.data;
-  var keys = Object.values(computedHeader.value);
+  const keys = Object.values(computedHeader.value);
 
   //search 
   if (searchValue.value != '') {
-    rows = rows.filter(item => {
-      var isMatch = false;
+    const filteredRows = rows.filter(item => {
+      let isMatch = false;
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
         if (key.searchable) {
@@ -79,23 +79,27 @@ const computedData = computed(() => {
           }
         }
       }
-      
+
       if (isMatch) { return item; }
     });
+    rows = filteredRows;
   }
 
-  rows = quickSort( rows, sort.value, order.value );
+  const sortedRows = quickSort(rows, sort.value, order.value);
 
-  totalFound.value = rows.length;
-  if (currentPage.value >= Math.ceil(totalFound.value / perPage.value)) {
-    currentPage.value = 0;
-  }
-  
+  (() => {
+    totalFound.value = sortedRows.length;
+    if (currentPage.value >= Math.ceil(totalFound.value / perPage.value)) {
+      currentPage.value = 0;
+    }
+  })()
+
   //pagination
-  rows = rows.slice(startFrom.value, endTo.value);
-  
-  return rows;
+  const pagedRows = sortedRows.slice(startFrom.value, endTo.value);
+
+  return pagedRows;
 });
+
 
 const computedHeader = computed(() => {
   var columns = props.columns;
@@ -155,41 +159,26 @@ const sortBy = (key, sortOrder) => {
 //   sort.value = key;
 // }
 
-const quickSort = (arr, key, order) => {
+function quickSort(arr, key, order) {
   if (arr.length <= 1 || key == null || order == null) {
     return arr;
   }
+  // Validate order argument (optional)
+  order = order.toUpperCase() === "DESC" ? -1 : 1;
 
-  // Randomize pivot selection (improves performance)
-  const pivotIndex = Math.floor(Math.random() * arr.length);
+  return arr.sort((a, b) => {
+    // Access property values using bracket notation
+    const valueA = a[key];
+    const valueB = b[key];
 
-  // Ensure key exists before accessing
-  if (!arr[pivotIndex].hasOwnProperty(key)) {
-    console.error("Invalid key: " + key);
-    return arr;
-  }
-
-  const pivot = arr[pivotIndex];
-  const left = [];
-  const right = [];
-
-  // Skip comparing with itself
-  for (let i = 0; i < arr.length; i++) {
-    if (i === pivotIndex) continue;
-
-    if (order === 'asc') {
-      arr[i][key] < pivot[key] ? left.push(arr[i]) : right.push(arr[i]);
+    // Handle different data types (optional)
+    if (typeof valueA === "string") {
+      return valueA.localeCompare(valueB) * order; // Use localeCompare for proper string comparison
     } else {
-      arr[i][key] > pivot[key] ? left.push(arr[i]) : right.push(arr[i]);
+      return (valueA - valueB) * order;
     }
-  }
-
-  // Create a copy of the array before sorting (avoids modifying original)
-  const sortedLeft = quickSort([...left], key, order);
-  const sortedRight = quickSort([...right], key, order);
-
-  return [...sortedLeft, pivot, ...sortedRight];
-};
+  });
+}
 
 const setPerPage = (event) => {
   perPage.value = Number(event.target.value) || perPage.value;

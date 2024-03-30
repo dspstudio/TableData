@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 const props = defineProps({
   data: {
@@ -14,7 +15,7 @@ const props = defineProps({
   },
   options: {
     type: Object,
-    default: {}
+    default: () => ({})
   }
 });
 
@@ -29,7 +30,7 @@ const handleClickRow = (row, item) => {
   <tbody>
   <TransitionGroup :name="options.rowTransition || 'fade'">
     <tr v-for="row, index in data" :key="row" class="hover:bg-gray-100 transition-all">
-      <td @click="handleClickRow(row, item)" v-for="item in columns" class="p-4 border-t text-gray-500" :class="item.class.td">
+      <td @click="handleClickRow(row, item)" v-for="item in columns" :key="item.name" class="p-4 border-t text-gray-500" :class="item.class.td">
         <component v-if="item.component" :is="item.component" :data="row"></component>
         <div v-else class="truncate w-full">
           {{ data[index][item.name] }}

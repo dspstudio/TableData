@@ -174,7 +174,7 @@ onMounted(() => {
 });
 
 const rowClick = (row, item) => {
-  // console.log(row, item);
+  console.log(row, item);
   if (item.name === 'delete') {
     const index = data.value.findIndex(x => x.id === row.id);
     if (index !== -1) {
@@ -191,8 +191,9 @@ const rowClick = (row, item) => {
     <TableData caption="Table caption" :rowClick="rowClick" :data="data" :columns="header" :searchable="true" :showFooter="true">
       <template #actions>
         <tr>
-          <td :colspan="header.length" class="border-t border-b">
-            <button>add new entry</button>
+          <td :colspan="header.length" class="border-t border-b p-4">
+            <h3>Legend:</h3>
+            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
           </td>
         </tr>
       </template>

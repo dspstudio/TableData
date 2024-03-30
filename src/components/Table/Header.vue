@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 const props = defineProps({
   columns: {
@@ -15,6 +16,8 @@ const props = defineProps({
   }
 });
 
+const { columns } = props;
+
 const cssClass = (item) => {
   let classes = 'relative ';
   if (item.class.th) {
@@ -29,7 +32,7 @@ const cssClass = (item) => {
 
 <template>
   <tr>
-    <th v-for="item in columns" @click="sortBy(item.name,'desc')" :class="cssClass(item)">
+    <th v-for="item in columns" @click="sortBy(item.name,'desc')" :key="item.name" :class="cssClass(item)">
       <div :class="item.sortable ? 'flex items-center gap-2' : ''">
         <div v-if="item.sortable" class="flex flex-col">
           <span :class="item.name === sort && order === 'asc' ? 'text-black' : 'text-gray-400'" class=" transition-all">

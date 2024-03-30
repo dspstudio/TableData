@@ -2,12 +2,6 @@
 import { ref } from 'vue';
 
 const loading = ref(false);
-const props = defineProps({
-  data: {
-    type: Object,
-    default: {}
-  }
-});
 const deleteItem = () => {
   loading.value = true;
   setTimeout(() => {
