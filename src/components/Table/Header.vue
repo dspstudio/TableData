@@ -17,22 +17,11 @@ const props = defineProps({
 });
 
 const { columns } = props;
-
-const cssClass = (item) => {
-  let classes = 'relative ';
-  if (item.class.th) {
-    classes += item.class.th;
-  } else {
-    return 'relative text-base text-start p-4 cursor-pointer select-none';
-  }
-
-  return classes;
-}
 </script>
 
 <template>
   <tr>
-    <th v-for="item in columns" @click="sortBy(item.name,'desc')" :key="item.name" :class="cssClass(item)">
+    <th v-for="item in columns" @click="sortBy(item.name,'desc')" :key="item.name" :class="item.class.th">
       <div :class="item.sortable ? 'flex items-center gap-2' : ''">
         <div v-if="item.sortable" class="flex flex-col">
           <span :class="item.name === sort && order === 'asc' ? 'text-black' : 'text-gray-400'" class=" transition-all">

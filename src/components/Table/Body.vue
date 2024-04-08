@@ -28,23 +28,23 @@ const handleClickRow = (row, item) => {
 
 <template>
   <tbody>
-  <TransitionGroup :name="options.rowTransition || 'fade'">
-    <tr v-for="row, index in data" :key="row" class="hover:bg-gray-100 transition-all">
-      <td @click="handleClickRow(row, item)" v-for="item in columns" :key="item.name" class="p-4 border-t text-gray-500" :class="item.class.td">
-        <component v-if="item.component" :is="item.component" :data="row"></component>
-        <div v-else class="truncate w-full">
-          {{ data[index][item.name] }}
-        </div>
-      </td>
-    </tr>
-  </TransitionGroup>
+    <TransitionGroup :name="options.rowTransition || 'fade'">
+      <tr v-for="row, index in data" :key="row" class="transition-all">
+        <td @click="handleClickRow(row, item)" v-for="item in columns" :key="item.name" :class="item.class.td">
+          <component v-if="item.component" :is="item.component" :data="row" :val="data[index][item.name]"></component>
+          <div v-else>
+            {{ data[index][item.name] }}
+          </div>
+        </td>
+      </tr>
+    </TransitionGroup>
   </tbody>
 </template>
 
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.1s ease;
+  transition: opacity 1s ease;
 }
 .fade-leave-active {
   display: none;

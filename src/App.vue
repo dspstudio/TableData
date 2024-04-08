@@ -52,7 +52,7 @@ const header = [
     sortable: true,
     searchable: true,
     class: {
-      th: 'text-center'
+      th: 'text-center cursor-pointer'
     }
   },
   {
@@ -188,8 +188,31 @@ const rowClick = (row, item) => {
 
 <template>
   <main class="container mx-auto p-8">
+    <section>
+      <div>
+        <h1 class="text-xl font-bold">Advanced data table made with Vue.js 3.x</h1>
+        <p>This data table is a simple and easy-to-use data table component made with Vue.js 3.x. The data table component in Vuetify 3 hasn’t been released yet, so i made this component by referring to the API and UI of data table component in Vuetify 2.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Searchable</li>
+          <li>Sortable</li>
+          <li>Filterable</li>
+          <li>Customizable</li>
+        </ul>
+      </div>
+    </section>
+
     <TableData caption="Table caption" :rowClick="rowClick" :data="data" :columns="header" :searchable="true" :showFooter="true">
-      <template #actions>
+      <template #afterHeader>
+        <tr>
+          <td :colspan="header.length" class="border-t border-b p-4">
+            <h3>Legend:</h3>
+            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
+          </td>
+        </tr>
+      </template>
+
+      <template #beforeFooter>
         <tr>
           <td :colspan="header.length" class="border-t border-b p-4">
             <h3>Legend:</h3>
@@ -201,5 +224,14 @@ const rowClick = (row, item) => {
   </main>
 </template>
 
-<style scoped>
+<style>
+.dataTableWrapper {
+  @apply border rounded-lg shadow;
+}
+.dataTableCaption {
+  @apply flex flex-col lg:flex-row items-center justify-between gap-4 p-4
+}
+.dataTableCaption p {
+  @apply text-2xl font-bold
+}
 </style>

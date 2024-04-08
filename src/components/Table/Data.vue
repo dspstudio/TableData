@@ -8,7 +8,7 @@ import TablePagination from './Pagination.vue';
 
 const props = defineProps({
   data: {
-    type: Array,
+    type: [Array, null],
     required: true
   },
   columns: {
@@ -186,17 +186,21 @@ const setPerPage = (event) => {
 </script>
 
 <template>
-  <section class="border rounded-lg shadow">
-    <div class="flex flex-col lg:flex-row items-center justify-between gap-4 p-4">
-      <p class="text-2xl font-bold">{{ caption }}</p>
+  <section class="dataTableWrapper">
+    <div v-if="caption || searchable" class="dataTableCaption">
+      <p>{{ caption }}</p>
       <TableSearch v-if="computedSearchable" :handleInputSearch="handleInputSearch" :searchValue="searchValue" />
     </div>
-    
-    <div style="overflow-x:auto;">
-      <table class="w-full table-auto lg:table-fixed text-sm">
-        <thead class="bg-gray-100">
+  
+    <div style="overflow-x:auto;"> <!-- for mobile auto scrollbar -->
+      <table class="w-full h-full table-auto lg:table-fixed text-sm text-left">
+        <thead>
           <TableHeader :columns="computedHeader" :sortBy="sortBy" :order="order" :sort="sort" />
         </thead>
+
+        <tbody v-if="$slots.afterHeader">
+          <slot name="afterHeader"></slot>
+        </tbody>
 
         <Transition mode="out-in">
           <tbody v-if="isLoading">
@@ -220,16 +224,17 @@ const setPerPage = (event) => {
           </tbody>
         </Transition>
         
-        <tbody>
-          <slot name="actions"></slot>
+        <tbody v-if="$slots.beforeFooter">
+          <slot name="beforeFooter"></slot>
         </tbody>
-        <tfoot v-if="showFooter" class="bg-gray-100">
+        
+        <tfoot v-if="showFooter">
           <TableHeader :columns="computedHeader" :sortBy="sortBy" :order="order" :sort="sort" />
         </tfoot>
 
       </table>
     </div>
-    
+  
     <Transition>
       <TablePagination v-if="!isLoading" :goToPage="goToPage" :setPerPage="setPerPage" :startFrom :endTo :currentPage :totalFound :perPage />
     </Transition>
