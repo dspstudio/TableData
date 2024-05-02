@@ -48,11 +48,11 @@ const options = [
 </script>
 
 <template>
-  <div class="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-8 p-4">
+  <div class="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-8 p-4 border-t">
     <small>Showing <strong>{{ startFrom + 1 }}</strong>-<strong>{{ endTo > totalFound ? totalFound : endTo }}</strong> of <strong>{{ totalFound }}</strong></small>
     <div v-show="totalFound > perPage" class="flex items-center">
       <select @change="setPerPage" v-model="selectPerPage" class="bg-gray-50 border border-gray-300 text-gray-900 font-medium text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 mr-4">
-        <option v-for="item in options" :value="item.value">{{ item.name }}</option>
+        <option v-for="item in options" :key="item.value" :value="item.value">{{ item.name }}</option>
       </select>
     
       <span @click="goToPage(currentPage - 1)" class="flex items-center justify-center px-3 h-8 ml-0 font-medium leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer">Previous</span>

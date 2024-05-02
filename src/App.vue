@@ -187,8 +187,8 @@ const rowClick = (row, item) => {
 </script>
 
 <template>
-  <main class="container mx-auto p-8">
-    <section>
+  <main class="flex flex-col gap-8 p-8">
+    <section class="container mx-auto">
       <div>
         <h1 class="text-xl font-bold">Advanced data table made with Vue.js 3.x</h1>
         <p>This data table is a simple and easy-to-use data table component made with Vue.js 3.x. The data table component in Vuetify 3 hasn’t been released yet, so i made this component by referring to the API and UI of data table component in Vuetify 2.</p>
@@ -202,25 +202,31 @@ const rowClick = (row, item) => {
       </div>
     </section>
 
-    <TableData caption="Table caption" :rowClick="rowClick" :data="data" :columns="header" :searchable="true" :showFooter="true">
-      <template #afterHeader>
-        <tr>
-          <td :colspan="header.length" class="border-t border-b p-4">
-            <h3>Legend:</h3>
-            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
-          </td>
-        </tr>
-      </template>
+    <section>
+      <TableData caption="Full featured table" :rowClick="rowClick" :data="data" :columns="header" :searchable="true" :showFooter="true">
+        <template #afterHeader>
+          <tr>
+            <td :colspan="header.length" class="border-t border-b p-4">
+              <h3>Legend:</h3>
+              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
+            </td>
+          </tr>
+        </template>
 
-      <template #beforeFooter>
-        <tr>
-          <td :colspan="header.length" class="border-t border-b p-4">
-            <h3>Legend:</h3>
-            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
-          </td>
-        </tr>
-      </template>
-    </TableData>
+        <template #beforeFooter>
+          <tr>
+            <td :colspan="header.length" class="border-t border-b p-4">
+              <h3>Legend:</h3>
+              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Natus tempora eius quia accusamus recusandae quo repellendus labore nemo totam consequatur impedit praesentium, laudantium facilis debitis iure consequuntur harum animi distinctio!</p>
+            </td>
+          </tr>
+        </template>
+      </TableData>
+    </section>
+
+    <section>
+      <TableData caption="Basic table" :data="data"></TableData>
+    </section>
   </main>
 </template>
 
@@ -229,7 +235,7 @@ const rowClick = (row, item) => {
   @apply border rounded-lg shadow;
 }
 .dataTableCaption {
-  @apply flex flex-col lg:flex-row items-center justify-between gap-4 p-4
+  @apply flex flex-col lg:flex-row items-center justify-between gap-4 p-4 border-b
 }
 .dataTableCaption p {
   @apply text-2xl font-bold

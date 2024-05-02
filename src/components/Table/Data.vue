@@ -13,7 +13,9 @@ const props = defineProps({
   },
   columns: {
     type: Array,
-    required: true
+    default() {
+      return []
+    }
   },
   perPage: {
     type: Number,
@@ -102,19 +104,22 @@ const computedData = computed(() => {
 
 
 const computedHeader = computed(() => {
-  var columns = props.columns;
-  // columns.unshift({
-  //   name: 'checkbox',
-  //   label: 'Click',
-  //   sortable: false,
-  //   searchable: false,
-  //   component: TableChecxbox,
-  //   class: {
-  //     th: 'w-20',
-  //     td: 'class-center',
-  //   }
-  // })
-  return columns;
+  if (props.columns.length === 0 && props.data) {
+    return Object.keys(props.data.at(0)).map(x => {
+      return {
+        name: x,
+        label: x,
+        sortable: false,
+        searchable: false,
+        class: {
+          th: 'p-4 w-20 text-center',
+          td: 'text-center'
+        }
+      }
+    });
+  } else {
+    return props.columns;
+  }
 });
 
 const computedSearchable = computed(() => {
