@@ -76,7 +76,7 @@ const computedData = computed(() => {
         const key = keys[i];
         if (key.searchable) {
           if (item[key.name] == null) continue;
-          if (item[key.name].toString().includes(searchValue.value)) {
+          if (item[key.name].toString().toLowerCase().includes(searchValue.value.toLowerCase())) {
             isMatch = true;
           }
         }
@@ -192,8 +192,11 @@ const setPerPage = (event) => {
 
 <template>
   <section class="dataTableWrapper">
-    <div v-if="caption || searchable" class="dataTableCaption">
-      <p>{{ caption }}</p>
+    <div class="dataTableCaption">
+      <p v-if="caption">{{ caption }}</p>
+      <div v-if="$slots.widgets">
+          <slot name="widgets"></slot>
+      </div>
       <TableSearch v-if="computedSearchable" :handleInputSearch="handleInputSearch" :searchValue="searchValue" />
     </div>
   

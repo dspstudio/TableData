@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
 const props = defineProps({
   goToPage: {
@@ -48,7 +49,7 @@ const options = [
 </script>
 
 <template>
-  <div class="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-8 p-4 border-t">
+  <div class="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-8 p-4">
     <small>Showing <strong>{{ startFrom + 1 }}</strong>-<strong>{{ endTo > totalFound ? totalFound : endTo }}</strong> of <strong>{{ totalFound }}</strong></small>
     <div v-show="totalFound > perPage" class="flex items-center">
       <select @change="setPerPage" v-model="selectPerPage" class="bg-gray-50 border border-gray-300 text-gray-900 font-medium text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 mr-4">
