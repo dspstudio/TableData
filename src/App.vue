@@ -1,11 +1,12 @@
 <script setup>
-  import { faker } from 'https://esm.sh/@faker-js/faker';
+import { faker } from 'https://esm.sh/@faker-js/faker';
 
 import { onMounted, ref } from 'vue';
 import TableData from './components/Table/Data.vue';
 import TdEmail from './components/Email.vue';
 import TdAvatar from './components/Avatar.vue';
 import DeleteButton from './components/DeleteButton.vue';
+import Password from './components/Password.vue';
 
 const data = ref(null);
 const header = [
@@ -20,13 +21,20 @@ const header = [
     }
   },
   {
+    name: 'userName',
+    label: 'Username',
+    sortable: true,
+    searchable: true,
+    component: TdAvatar,
+    class: {}
+  },
+  {
     name: 'email',
     label: 'Email address',
     sortable: true,
     searchable: true,
     component: TdEmail,
-    class: {
-    }
+
   },
   {
     name: 'firstName',
@@ -43,14 +51,6 @@ const header = [
     class: {}
   },
   {
-    name: 'userName',
-    label: 'Username',
-    sortable: true,
-    searchable: true,
-    component: TdAvatar,
-    class: {}
-  },
-  {
     name: 'sex',
     label: 'Gender',
     sortable: true,
@@ -62,9 +62,13 @@ const header = [
     label: 'IP',
     sortable: true,
     searchable: true,
-    class: {
-      th: 'text-center cursor-pointer'
-    }
+  },
+  {
+    name: 'password',
+    label: 'Password',
+    sortable: false,
+    searchable: false,
+    component: Password,
   },
   {
     name: 'delete',
@@ -81,7 +85,7 @@ const header = [
 
 onMounted(() => {
   setTimeout(() => {
-    data.value = generateFakeData(1000);
+    data.value = generateFakeData(10000);
   }, 1000);
 });
 
@@ -98,7 +102,7 @@ const generateFakeData = (numObjects = 1) => {
     fakeObject.userName = faker.internet.userName();
     fakeObject.sex = faker.person.sexType(),
     fakeObject.email = faker.internet.email();
-    fakeObject.address = faker.address.streetAddress();
+    fakeObject.address = faker.location.streetAddress();
     fakeObject.avatar = faker.image.avatar();
     fakeObject.birthday = faker.date.birthdate();
     fakeObject.subscriptionTier = faker.helpers.arrayElement(['free', 'basic', 'business']);
@@ -117,9 +121,9 @@ const rowClick = (row, item) => {
   if (item.name === 'delete') {
     const index = data.value.findIndex(x => x.id === row.id);
     if (index !== -1) {
-      setTimeout(() => {
+      if (confirm('Are you sure you want to delete ' + row.userName + '?')) {
         data.value.splice(index, 1);
-      }, 1000);
+      }
     }
   }
 }

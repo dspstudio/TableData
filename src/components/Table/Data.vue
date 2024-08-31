@@ -68,7 +68,7 @@ const computedData = computed(() => {
   let rows = props.data;
   const keys = Object.values(computedHeader.value);
 
-  //search 
+  // search 
   if (searchValue.value != '') {
     const filteredRows = rows.filter(item => {
       let isMatch = false;
@@ -87,8 +87,10 @@ const computedData = computed(() => {
     rows = filteredRows;
   }
 
+  // sort
   const sortedRows = quickSort(rows, sort.value, order.value);
 
+  // pagination
   (() => {
     totalFound.value = sortedRows.length;
     if (currentPage.value >= Math.ceil(totalFound.value / perPage.value)) {
@@ -96,7 +98,6 @@ const computedData = computed(() => {
     }
   })()
 
-  //pagination
   const pagedRows = sortedRows.slice(startFrom.value, endTo.value);
 
   return pagedRows;
@@ -224,7 +225,7 @@ const setPerPage = (event) => {
               </td>
             </tr>
           </tbody>
-          <TableBody v-else-if="computedData.length > 0" :options="options" :data="computedData" :columns="computedHeader" :rowClick="rowClick" />
+          <TableBody v-else-if="computedData.length > 0" :options="options" :data="computedData" :columns="computedHeader" :rowClick="rowClick" class="table-main-body" />
           <tbody v-else>
             <tr>
               <td :colspan="computedHeader.length" class="text-center p-4">No results found</td>
@@ -248,16 +249,3 @@ const setPerPage = (event) => {
     </Transition>
   </section>
 </template>
-
-<style scoped>
-/* we will explain what these classes do next! */
-.v-enter-active,
-.v-leave-active {
-  transition: opacity 0.150s ease;
-}
-
-.v-enter-from,
-.v-leave-to {
-  opacity: 0;
-}
-</style>

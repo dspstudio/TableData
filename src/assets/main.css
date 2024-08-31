@@ -2,3 +2,44 @@
 body {
   font-family:'Roboto', sans-serif;
 }
+.dt-top-header-sortable {
+  @apply flex items-center gap-2;
+}
+.dt-top-header-sortable-content {
+  @apply flex flex-col;
+}
+.dt-top-header-sortable-asc {
+  @apply text-black transition-all;
+}
+.dt-top-header-sortable-desc {
+  @apply text-gray-400 transition-all;
+}
+.dt-top-header-content {
+  @apply flex-grow;
+}
+.table-main-body tr {
+  @apply hover:bg-gray-200 border-b transition-all
+}
+.dataTableWrapper .table-main-body td {
+  @apply p-1
+}
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1s ease;
+}
+.fade-leave-active {
+  display: none;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

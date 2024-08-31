@@ -9,11 +9,11 @@ const {data} = defineProps({
 </script>
 
 <template>
-  <div class="flex items-center gap-1">
-    <div class="h-6 w-6 rounded-full overflow-hidden">
-      <img :src="data.avatar" />
+  <div class="flex grid-cols-2 auto-rows-max gap-1">
+    <div class="flex w-6 items-center">
+      <img :src="data.avatar" class="h-auto w-6 rounded-full overflow-hidden" />
     </div>
-    <div>
+    <div class="truncate">
       {{ data.userName }}
     </div>
   </div>
