@@ -16,6 +16,10 @@ const props = defineProps({
   options: {
     type: Object,
     default: () => ({})
+  },
+  translations: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -28,7 +32,7 @@ const handleClickRow = (row, item) => {
 
 <template>
   <tbody>
-    <TransitionGroup :name="options.rowTransition || 'fade'">
+    <TransitionGroup :name="options.rowTransition">
       <tr v-for="row, index in data" :key="row">
         <td @click="handleClickRow(row, item)" v-for="item in columns" :key="item.name" :class="item?.class?.td">
           <component v-if="item.component" :is="item.component" :data="row" :val="data[index][item.name]"></component>

@@ -13,6 +13,10 @@ const props = defineProps({
   },
   sort: {
     type: String
+  },
+  translations: {
+    type: Object,
+    default: () => ({})
   }
 });
 

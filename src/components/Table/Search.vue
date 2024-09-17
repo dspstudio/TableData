@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <section>
     <div class="relative mt-1">
@@ -8,14 +9,13 @@
       <div v-if="searchValue.length > 0" class="absolute inset-y-0 right-0 flex items-center pr-3 fill-gray-500 hover:fill-black cursor-pointer transition-all" @click="handleInputSearch('')">
         <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg>
       </div>
-      <input :value="searchValue" @input="handleInputSearch($event.target.value)" type="text" id="table-search" class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50" placeholder="Search for items" >
+      <input :value="searchValue" @input="handleInputSearch($event.target.value)" type="text" id="table-search" class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50" :placeholder="translations.search_items_placeholder" >
     </div>
   </section>
 </template>
 
 <script setup>
-
-const props = defineProps({
+defineProps({
   handleInputSearch: {
     type: Function,
     required: true
@@ -23,6 +23,10 @@ const props = defineProps({
   searchValue: {
     type: String,
     default: ''
+  },
+  translations: {
+    type: Object,
+    default: () => ({})
   }
 });
 </script>

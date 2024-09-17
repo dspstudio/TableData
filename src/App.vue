@@ -9,6 +9,7 @@ import DeleteButton from './components/DeleteButton.vue';
 import Password from './components/Password.vue';
 
 const data = ref(null);
+const restData = ref(null);
 const header = [
   {
     name: 'id',
@@ -26,7 +27,6 @@ const header = [
     sortable: true,
     searchable: true,
     component: TdAvatar,
-    class: {}
   },
   {
     name: 'email',
@@ -34,7 +34,6 @@ const header = [
     sortable: true,
     searchable: true,
     component: TdEmail,
-
   },
   {
     name: 'firstName',
@@ -87,6 +86,8 @@ onMounted(() => {
   setTimeout(() => {
     data.value = generateFakeData(10000);
   }, 1000);
+
+  getRESTData();
 });
 
 const generateFakeData = (numObjects = 1) => {
@@ -127,10 +128,28 @@ const rowClick = (row, item) => {
     }
   }
 }
+
+const getRESTData = () => {
+  const url = 'https://reqres.in/api/users?page=1';
+  fetch(url)
+    .then(response => response.json())
+    .then(data => restData.value = data);
+}
 </script>
 
 <template>
   <main class="flex flex-col gap-8 p-8">
+    <section v-if="restData !== null">
+      <TableData 
+        :perPage="restData?.per_page" 
+        caption="REST API table" 
+        :data="restData?.data"
+        :currentPage="restData?.page-1"
+        :total="restData?.total"
+      >
+      </TableData>
+    </section>
+    
     <section class="container mx-auto">
       <div>
         <h1 class="text-xl font-bold">Advanced data table made with Vue.js 3.x</h1>
@@ -181,9 +200,8 @@ const rowClick = (row, item) => {
       </TableData>
     </section>
 
-    <section>
-      <TableData caption="Basic table" :data="generateFakeData(1000)"></TableData>
-    </section>
+
+
   </main>
 </template>
 
