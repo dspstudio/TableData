@@ -55,6 +55,11 @@ const props = defineProps({
     type: Function,
     default: null
   },
+  /** Extra class(es) per data row — string or `(row) => string`. */
+  rowClass: {
+    type: [String, Function],
+    default: null
+  },
   options: {
     type: Object,
     default: () => ({
@@ -65,6 +70,11 @@ const props = defineProps({
   classes: {
     type: Object,
     default: () => ({})
+  },
+  /** Adds `dt-theme-<name>` to the root. Import the matching file from ./themes/. */
+  theme: {
+    type: String,
+    default: 'light'
   },
   /** Skip default `dt-*` theme classes (bare markup for bring-your-own CSS). */
   unstyled: {
@@ -87,15 +97,41 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits([
+  'row-click',
+  'update:currentPage',
+  'update:perPage',
+  'update:sort',
+  'update:search',
+]);
+
 const ui = computed(() => mergeClasses(props.classes, { unstyled: props.unstyled }));
 provide('dtClasses', ui);
 provide('dtUnstyled', computed(() => props.unstyled));
+
+const rootClass = computed(() => [
+  ui.value.root,
+  !props.unstyled && props.theme ? `dt-theme-${props.theme}` : '',
+]);
 
 const perPage = ref(props.perPage);
 const currentPage = ref(props.currentPage);
 const searchValue = ref('');
 const sort = ref(props.initialSortKey);
 const order = ref(props.initialSortOrder);
+
+watch(() => props.perPage, (value) => { perPage.value = value; });
+watch(() => props.currentPage, (value) => { currentPage.value = value; });
+
+watch(currentPage, (value) => emit('update:currentPage', value));
+watch(perPage, (value) => emit('update:perPage', value));
+watch(searchValue, (value) => emit('update:search', value));
+watch([sort, order], ([key, sortOrder]) => emit('update:sort', { key, order: sortOrder }));
+
+const handleRowClick = (row, column) => {
+  props.rowClick?.(row, column);
+  emit('row-click', row, column);
+};
 
 const computedHeader = computed(() => {
   if (props.columns.length > 0) return props.columns;
@@ -198,7 +234,7 @@ const setPerPage = (event) => {
 </script>
 
 <template>
-  <section :class="ui.root">
+  <section :class="rootClass">
     <div :class="ui.caption">
       <p v-if="caption" :class="ui.captionTitle">{{ caption }}</p>
       <div v-if="$slots.widgets" :class="ui.widgets">
@@ -240,8 +276,9 @@ const setPerPage = (event) => {
             :options="options"
             :data="computedData"
             :columns="computedHeader"
+            :row-class="rowClass"
             :translations="translations"
-            :rowClick="rowClick"
+            @row-click="handleRowClick"
           />
           <tbody v-else :class="ui.tbody">
             <tr>

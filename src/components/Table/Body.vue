@@ -12,13 +12,13 @@ const props = defineProps({
     type: Array,
     required: true
   },
-  rowClick: {
-    type: Function,
-    default: null
-  },
   options: {
     type: Object,
     default: () => ({})
+  },
+  rowClass: {
+    type: [String, Function],
+    default: null
   },
   translations: {
     type: Object,
@@ -26,14 +26,15 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['row-click']);
+
 const ui = inject('dtClasses', defaultClasses);
 const unstyled = inject('dtUnstyled', false);
 
-const handleClickRow = (row, item) => {
-  if (typeof props.rowClick === 'function') {
-    props.rowClick(row, item);
-  }
-}
+const resolveRowClass = (row) => {
+  if (typeof props.rowClass === 'function') return props.rowClass(row) || '';
+  return props.rowClass || '';
+};
 
 /** Ellipsis is on by default; set column.ellipsis = false to disable. */
 const hasEllipsis = (column) => column.ellipsis !== false;
@@ -77,9 +78,9 @@ const cellTitle = (value, column) => {
 <template>
   <tbody :class="ui.tbody">
     <TransitionGroup :name="options.rowTransition">
-      <tr v-for="(row, index) in data" :key="row.id ?? index" :class="ui.row">
+      <tr v-for="(row, index) in data" :key="row.id ?? index" :class="[ui.row, resolveRowClass(row)]">
         <td
-          @click="handleClickRow(row, item)"
+          @click="emit('row-click', row, item)"
           v-for="item in columns"
           :key="item.name"
           :class="[ui.td, cellOverflowClass(item), item?.class?.td]"

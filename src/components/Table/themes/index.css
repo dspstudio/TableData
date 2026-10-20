@@ -1,0 +1,5 @@
+/* All bundled themes. Prefer importing only the ones you use. */
+@import './light.css';
+@import './dark.css';
+@import './compact.css';
+@import './minimal.css';

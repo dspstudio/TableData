@@ -1,0 +1,41 @@
+/*
+ * Default (light) tokens. Applied on `.dt` so every theme inherits spacing
+ * and typography; `.dt-theme-light` keeps the named theme explicit.
+ * Other themes only override what they change.
+ */
+.dt,
+.dt.dt-theme-light {
+  --dt-bg: #ffffff;
+  --dt-border-color: #e5e7eb;
+  --dt-border-radius: 0.75rem;
+  --dt-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.04);
+  --dt-font-size: 0.8125rem;
+  --dt-font-family: inherit;
+  --dt-text: #111827;
+  --dt-muted: #6b7280;
+
+  --dt-caption-padding: 1rem 1.25rem;
+  --dt-caption-gap: 0.75rem 1.25rem;
+  --dt-caption-title-size: 1.125rem;
+  --dt-caption-title-weight: 600;
+  --dt-caption-bg: transparent;
+
+  --dt-th-bg: #f9fafb;
+  --dt-th-color: #374151;
+  --dt-th-padding: 0.75rem 1rem;
+  --dt-cell-padding: 0.7rem 1rem;
+  --dt-row-border-color: #f3f4f6;
+  --dt-row-hover-bg: #f3f4f6;
+
+  --dt-sort-active: #111827;
+  --dt-sort-inactive: #d1d5db;
+
+  --dt-loading-track: #e5e7eb;
+  --dt-loading-accent: #4f46e5;
+
+  --dt-input-bg: #ffffff;
+  --dt-input-border: #d1d5db;
+  --dt-input-radius: 0.5rem;
+  --dt-input-padding: 0.5rem 0.75rem;
+  --dt-btn-hover-bg: #f3f4f6;
+}

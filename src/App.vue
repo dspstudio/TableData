@@ -7,11 +7,24 @@ import TdEmail from './components/Email.vue';
 import TdAvatar from './components/Avatar.vue';
 import DeleteButton from './components/DeleteButton.vue';
 import Password from './components/Password.vue';
+import './components/Table/themes/index.css';
 
 const data = ref(null);
 const restData = ref(null);
-/** Zero-config demo: plain objects only, no column defs or cell components. */
-const plainDemoData = ref(
+/** Full-featured demo: last `@row-click` selection. */
+const selectedRow = ref(null);
+const selectedColumn = ref(null);
+
+const themes = ['light', 'dark', 'compact', 'minimal', 'sky'];
+const activeTheme = ref('dark');
+
+const themeDemoColumns = [
+  { name: 'id', label: 'ID', sortable: true, width: '4rem' },
+  { name: 'name', label: 'Name', sortable: true, searchable: true },
+  { name: 'email', label: 'Email', sortable: true, searchable: true },
+  { name: 'city', label: 'City', sortable: true, searchable: true },
+];
+const themeDemoData = ref(
   Array.from({ length: 25 }, (_, i) => ({
     id: i + 1,
     name: faker.person.fullName(),
@@ -111,15 +124,31 @@ const generateFakeData = (count = 1) => {
 
 const regenerateData = () => {
   data.value = generateFakeData(1000);
+  selectedRow.value = null;
+  selectedColumn.value = null;
 }
 
-const rowClick = (row, item) => {
-  if (item.name !== 'delete') return;
+const clearSelection = () => {
+  selectedRow.value = null;
+  selectedColumn.value = null;
+}
 
-  const index = data.value.findIndex(x => x.id === row.id);
-  if (index !== -1 && confirm(`Are you sure you want to delete ${row.userName}?`)) {
-    data.value.splice(index, 1);
+const fullFeaturedRowClass = (row) => (
+  selectedRow.value?.id === row.id ? 'docs-row-selected' : ''
+)
+
+const rowClick = (row, item) => {
+  if (item.name === 'delete') {
+    const index = data.value.findIndex(x => x.id === row.id);
+    if (index !== -1 && confirm(`Are you sure you want to delete ${row.userName}?`)) {
+      if (selectedRow.value?.id === row.id) clearSelection();
+      data.value.splice(index, 1);
+    }
+    return;
   }
+
+  selectedRow.value = row;
+  selectedColumn.value = item;
 }
 
 const getRESTData = async () => {
@@ -152,7 +181,7 @@ const getRESTData = async () => {
         <a href="#slots">Slots</a>
         <a href="#example-basic">Basic example</a>
         <a href="#example-full">Full example</a>
-        <a href="#example-default">Unstyled</a>
+        <a href="#example-themes">Themes</a>
       </nav>
     </header>
 
@@ -187,7 +216,8 @@ const getRESTData = async () => {
         </li>
         <li>
           <strong>Row actions</strong>
-          Use <code>:rowClick</code> to handle cell clicks (e.g. delete).
+          Listen to <code>@row-click</code> for cell clicks; use <code>rowClass</code> to
+          highlight the active row.
         </li>
         <li>
           <strong>i18n-ready</strong>
@@ -195,7 +225,8 @@ const getRESTData = async () => {
         </li>
         <li>
           <strong>Theming</strong>
-          CSS variables on <code>.dt</code> plus a <code>classes</code> prop to append your own class names.
+          Built-in <code>light</code>, <code>dark</code>, <code>compact</code>, and
+          <code>minimal</code> themes via the <code>theme</code> prop, or write your own with CSS variables.
         </li>
       </ul>
     </section>
@@ -212,10 +243,10 @@ const getRESTData = async () => {
   caption="Users"
   :searchable="true"
   :showFooter="true"
-  :rowClick="onRowClick"
+  @row-click="onRowClick"
 /&gt;</code></pre>
       <p class="docs-note">
-        Sorting and filtering run on the full in-memory array; only the current page is rendered.
+        Sorting and search run on the full in-memory array; only the current page is rendered.
         There is no virtual scrolling yet.
       </p>
     </section>
@@ -261,13 +292,13 @@ const getRESTData = async () => {
               <td><code>perPage</code></td>
               <td><code>Number</code></td>
               <td><code>10</code></td>
-              <td>Initial rows per page.</td>
+              <td>Rows per page. Supports <code>v-model:perPage</code>.</td>
             </tr>
             <tr>
               <td><code>currentPage</code></td>
               <td><code>Number</code></td>
               <td><code>0</code></td>
-              <td>Initial page (0-based).</td>
+              <td>Page (0-based). Supports <code>v-model:currentPage</code>.</td>
             </tr>
             <tr>
               <td><code>initialSortKey</code></td>
@@ -291,7 +322,16 @@ const getRESTData = async () => {
               <td><code>rowClick</code></td>
               <td><code>Function</code></td>
               <td><code>null</code></td>
-              <td>Called as <code>(row, column)</code> when a cell is clicked.</td>
+              <td>Deprecated — use <code>@row-click</code>. Still called as <code>(row, column)</code>.</td>
+            </tr>
+            <tr>
+              <td><code>rowClass</code></td>
+              <td><code>String | Function</code></td>
+              <td><code>null</code></td>
+              <td>
+                Extra class(es) on each data row. Function form:
+                <code>(row) =&gt; string</code> (e.g. selected highlight).
+              </td>
             </tr>
             <tr>
               <td><code>options</code></td>
@@ -309,12 +349,23 @@ const getRESTData = async () => {
               </td>
             </tr>
             <tr>
+              <td><code>theme</code></td>
+              <td><code>String</code></td>
+              <td><code>'light'</code></td>
+              <td>
+                Adds <code>dt-theme-&lt;name&gt;</code> to the root. Built-ins:
+                <code>light</code> (included with the component),
+                <code>dark</code>, <code>compact</code>, <code>minimal</code>
+                (import those CSS files first).
+              </td>
+            </tr>
+            <tr>
               <td><code>unstyled</code></td>
               <td><code>Boolean</code></td>
               <td><code>false</code></td>
               <td>
-                Omit all default <code>dt-*</code> theme classes (header, rows, chrome,
-                etc.) for bring-your-own CSS.
+                Advanced: omit all default <code>dt-*</code> classes and the theme, rendering
+                bare markup for a design system written from scratch.
               </td>
             </tr>
             <tr>
@@ -328,6 +379,45 @@ const getRESTData = async () => {
               <td><code>Number</code></td>
               <td><code>0</code></td>
               <td>Reserved for future server-side paging; unused today.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Events</h3>
+      <div class="docs-table-wrap">
+        <table class="docs-table">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Payload</th>
+              <th>When</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>row-click</code></td>
+              <td><code>(row, column)</code></td>
+              <td>A data cell is clicked.</td>
+            </tr>
+            <tr>
+              <td><code>update:currentPage</code></td>
+              <td><code>Number</code></td>
+              <td>Page changes (0-based).</td>
+            </tr>
+            <tr>
+              <td><code>update:perPage</code></td>
+              <td><code>Number</code></td>
+              <td>Page size changes.</td>
+            </tr>
+            <tr>
+              <td><code>update:sort</code></td>
+              <td><code>{ key, order }</code></td>
+              <td>Sort column or direction changes.</td>
+            </tr>
+            <tr>
+              <td><code>update:search</code></td>
+              <td><code>String</code></td>
+              <td>Search text changes.</td>
             </tr>
           </tbody>
         </table>
@@ -424,31 +514,71 @@ const getRESTData = async () => {
     <section id="theming" class="docs-section">
       <h2>Theming</h2>
       <p>
-        Visual design lives in <code>datatable.css</code> on semantic classes
-        (<code>.dt</code>, <code>.dt-row</code>, …). Two ways to customize:
+        <code>datatable.css</code> is layout only. Each theme is a file under
+        <code>themes/</code> that sets <code>--dt-*</code> variables on
+        <code>.dt.dt-theme-&lt;name&gt;</code>.         The default <code>light</code> theme
+        (<code>themes/light.css</code>) is imported by <code>datatable.css</code> and sets
+        base tokens on <code>.dt</code> so other themes inherit padding/spacing; other
+        themes are opt-in and only override what they change.
       </p>
-      <h3>1. CSS variables</h3>
-      <p>Override tokens on <code>.dt</code> or a parent wrapper:</p>
-<pre class="docs-code"><code>.my-table .dt {
-  --dt-border-color: #0f172a;
+      <h3>1. Use a built-in theme</h3>
+      <p>Import the theme file once (globally or where you use the table), then pick it per table:</p>
+<pre class="docs-code"><code>import '@/components/Table/themes/dark.css';
+// or all of them: '@/components/Table/themes/index.css'
+
+&lt;TableData :data="rows" /&gt;                 &lt;!-- theme="light" by default --&gt;
+&lt;TableData :data="rows" theme="dark" /&gt;
+&lt;TableData :data="rows" theme="compact" /&gt;</code></pre>
+      <p class="docs-note">
+        Different tables on the same page can use different themes. Each theme only
+        matches <code>.dt.dt-theme-&lt;name&gt;</code>, so they never clash.
+      </p>
+      <h3>2. Add a new theme</h3>
+      <ol class="docs-steps">
+        <li>
+          Create a file under <code>src/components/Table/themes/</code>, e.g.
+          <code>ocean.css</code>. The class must be
+          <code>.dt.dt-theme-&lt;name&gt;</code> and match the <code>theme</code> prop.
+        </li>
+        <li>
+          Import it once (app entry or next to the table). Optionally add
+          <code>@import './ocean.css';</code> in <code>themes/index.css</code> to ship it
+          with the built-ins.
+        </li>
+        <li>Pass the same name: <code>&lt;TableData theme="ocean" /&gt;</code>.</li>
+      </ol>
+<pre class="docs-code"><code>/* src/components/Table/themes/ocean.css */
+.dt.dt-theme-ocean {
+  --dt-bg: #ffffff;
+  --dt-border-color: #bae6fd;
+  --dt-th-bg: #f0f9ff;
+  --dt-th-color: #0369a1;
   --dt-row-hover-bg: #e0f2fe;
   --dt-loading-accent: #0284c7;
-  --dt-caption-title-size: 1.25rem;
-}</code></pre>
-      <p class="docs-note">
-        Main tokens: <code>--dt-bg</code>, <code>--dt-border-color</code>,
-        <code>--dt-border-radius</code>, <code>--dt-shadow</code>,
-        <code>--dt-row-hover-bg</code>, <code>--dt-cell-padding</code>,
-        <code>--dt-input-bg</code>, <code>--dt-input-border</code>,
-        <code>--dt-loading-accent</code>, <code>--dt-muted</code>.
-        See <code>src/components/Table/datatable.css</code> for the full list.
-      </p>
-      <h3>2. <code>classes</code> prop</h3>
+  --dt-sort-active: #0369a1;
+}
+
+/* app entry or component */
+import '@/components/Table/themes/ocean.css'
+
+&lt;TableData :data="rows" theme="ocean" /&gt;</code></pre>
       <p>
-        Append your own class names onto any part. Defaults stay; your string is
-        added after them. Works with plain CSS — no utility framework required.
-        Use <code>unstyled</code> when you want <em>no</em> default theme classes at all
-        (including <code>.dt-th</code> header styles).
+        The full-featured demo below uses a docs-only <code>sky</code> theme defined the
+        same way in <code>main.css</code>.
+      </p>
+      <p class="docs-note">
+        Main tokens: <code>--dt-bg</code>, <code>--dt-text</code>, <code>--dt-muted</code>,
+        <code>--dt-border-color</code>, <code>--dt-border-radius</code>, <code>--dt-shadow</code>,
+        <code>--dt-font-size</code>, <code>--dt-th-bg</code>, <code>--dt-th-color</code>,
+        <code>--dt-th-padding</code>, <code>--dt-cell-padding</code>,
+        <code>--dt-row-hover-bg</code>, <code>--dt-input-bg</code>,
+        <code>--dt-input-border</code>, <code>--dt-loading-accent</code>.
+        See <code>src/components/Table/themes/light.css</code> for the full list.
+      </p>
+      <h3>3. <code>classes</code> prop</h3>
+      <p>
+        For one-off tweaks, append your own class names onto any part. Defaults stay; your
+        string is added after them. Works with plain CSS — no utility framework required.
       </p>
 <pre class="docs-code"><code>&lt;TableData
   :data="rows"
@@ -532,7 +662,8 @@ const getRESTData = async () => {
       <h2>Example: full featured</h2>
       <p>
         Custom column components (avatar, email, password reveal, delete), global search,
-        footer header, caption widgets, and <code>rowClick</code> for delete confirmation.
+        footer header, caption widgets, and <code>@row-click</code>: click any cell to
+        select the row (detail strip below); Delete still confirms removal.
         Starts with 10&nbsp;000 fake rows (loading spinner for ~1s).
       </p>
 <pre class="docs-code"><code>&lt;TableData
@@ -541,32 +672,34 @@ const getRESTData = async () => {
   :columns="header"
   :searchable="true"
   :showFooter="true"
-  :rowClick="rowClick"
-&gt;
-  &lt;template #widgets&gt;…&lt;/template&gt;
-  &lt;template #afterHeader&gt;…&lt;/template&gt;
-  &lt;template #beforeFooter&gt;…&lt;/template&gt;
-&lt;/TableData&gt;</code></pre>
-      <div class="docs-demo docs-theme-sky">
+  theme="sky"
+  :classes="{ row: 'docs-row-clickable', tbody: 'docs-zebra' }"
+  :row-class="(row) =&gt; row.id === selected?.id ? 'docs-row-selected' : ''"
+  @row-click="onRowClick"
+/&gt;</code></pre>
+      <div class="docs-demo">
         <TableData
           caption="Full featured table"
-          :rowClick="rowClick"
+          theme="sky"
+          @row-click="rowClick"
           :data="data"
           :columns="header"
           :searchable="true"
           :showFooter="true"
+          :classes="{ row: 'docs-row-clickable', tbody: 'docs-zebra' }"
+          :row-class="fullFeaturedRowClass"
         >
           <template #widgets>
             <button type="button" class="docs-btn" @click="regenerateData">
-              Regenerate (1 000 rows)
+              Regenerate (1&nbsp;000 rows)
             </button>
           </template>
           <template #afterHeader>
             <tr>
               <td :colspan="header.length" class="docs-slot-cell">
                 <strong>afterHeader slot</strong>
-                — tip: click a sortable column to order rows; use Delete to remove a user
-                via <code>rowClick</code>.
+                — click any cell to select a row; Delete removes via the same
+                <code>@row-click</code> handler.
               </td>
             </tr>
           </template>
@@ -580,20 +713,73 @@ const getRESTData = async () => {
             </tr>
           </template>
         </TableData>
+        <div v-if="selectedRow" class="docs-row-detail" role="status">
+          <div class="docs-row-detail-main">
+            <img
+              v-if="selectedRow.avatar"
+              class="docs-row-detail-avatar"
+              :src="selectedRow.avatar"
+              alt=""
+              width="40"
+              height="40"
+            />
+            <div>
+              <p class="docs-row-detail-title">
+                {{ selectedRow.firstName }} {{ selectedRow.lastName }}
+                <span class="docs-row-detail-meta">@{{ selectedRow.userName }}</span>
+              </p>
+              <p class="docs-row-detail-sub">{{ selectedRow.email }}</p>
+              <p class="docs-row-detail-column">
+                Clicked column:
+                <code>{{ selectedColumn?.label || selectedColumn?.name }}</code>
+                (<code>{{ selectedColumn?.name }}</code>)
+              </p>
+            </div>
+          </div>
+          <button type="button" class="docs-btn" @click="clearSelection">Clear</button>
+        </div>
+        <div v-else class="docs-row-detail docs-row-detail--empty" role="status">
+          <p class="docs-row-detail-empty-text">
+            Click any data cell to select a row — this strip will show the payload and
+            which column was clicked (<code>@row-click</code> → <code>(row, column)</code>).
+          </p>
+        </div>
       </div>
     </section>
 
-    <section id="example-default" class="docs-section">
-      <h2>Example: unstyled (bring your own CSS)</h2>
+    <section id="example-themes" class="docs-section">
+      <h2>Example: themes</h2>
       <p>
-        Pass <code>:unstyled="true"</code> to skip all default <code>dt-*</code> theme
-        classes — including header styling. You get bare markup (plus pagination
-        controls) so you can theme from scratch. Still no <code>columns</code> here:
-        headers are inferred from object keys.
+        Same data and columns, different <code>theme</code>. Switch live — only the root
+        class changes.
       </p>
-<pre class="docs-code"><code>&lt;TableData :data="plainDemoData" unstyled /&gt;</code></pre>
+      <div class="docs-theme-picker" role="group" aria-label="Theme">
+        <button
+          v-for="name in themes"
+          :key="name"
+          type="button"
+          class="docs-btn"
+          :aria-pressed="activeTheme === name"
+          @click="activeTheme = name"
+        >
+          {{ name }}
+        </button>
+      </div>
+<pre class="docs-code"><code>&lt;TableData
+  caption="Customers"
+  :data="rows"
+  :columns="columns"
+  :searchable="true"
+  theme="{{ activeTheme }}"
+/&gt;</code></pre>
       <div class="docs-demo">
-        <TableData :data="plainDemoData" unstyled />
+        <TableData
+          caption="Customers"
+          :data="themeDemoData"
+          :columns="themeDemoColumns"
+          :searchable="true"
+          :theme="activeTheme"
+        />
       </div>
     </section>
   </main>

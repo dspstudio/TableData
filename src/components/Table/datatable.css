@@ -1,7 +1,9 @@
 /**
- * Data table theme
- * Override tokens on `.dt` (or a parent) — or pass a `classes` prop to add/replace utilities.
+ * Data table layout (structure only). Theme tokens live in ./themes/*.css
+ * as `.dt.dt-theme-<name>`. Light is imported here so the default works
+ * without an extra import; other themes are opt-in.
  */
+@import './themes/light.css';
 
 /* Unstyled mode: neutralize browser defaults only (UA centers <th>). Not a visual theme. */
 .dt-unstyled th {
@@ -9,40 +11,6 @@
 }
 
 .dt {
-  --dt-bg: #ffffff;
-  --dt-border-color: #e5e7eb;
-  --dt-border-radius: 0.75rem;
-  --dt-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.04);
-  --dt-font-size: 0.8125rem;
-  --dt-font-family: inherit;
-  --dt-text: #111827;
-  --dt-muted: #6b7280;
-
-  --dt-caption-padding: 1rem 1.25rem;
-  --dt-caption-gap: 0.75rem 1.25rem;
-  --dt-caption-title-size: 1.125rem;
-  --dt-caption-title-weight: 600;
-  --dt-caption-bg: transparent;
-
-  --dt-th-bg: #f9fafb;
-  --dt-th-color: #374151;
-  --dt-th-padding: 0.75rem 1rem;
-  --dt-cell-padding: 0.7rem 1rem;
-  --dt-row-border-color: #f3f4f6;
-  --dt-row-hover-bg: #f3f4f6;
-
-  --dt-sort-active: #111827;
-  --dt-sort-inactive: #d1d5db;
-
-  --dt-loading-track: #e5e7eb;
-  --dt-loading-accent: #4f46e5;
-
-  --dt-input-bg: #ffffff;
-  --dt-input-border: #d1d5db;
-  --dt-input-radius: 0.5rem;
-  --dt-input-padding: 0.5rem 0.75rem;
-  --dt-btn-hover-bg: #f3f4f6;
-
   background: var(--dt-bg);
   border: 1px solid var(--dt-border-color);
   border-radius: var(--dt-border-radius);
@@ -71,8 +39,10 @@
   }
 }
 
-.dt-caption-title {
+.dt .dt-caption-title {
   margin: 0;
+  max-width: none;
+  color: var(--dt-text);
   flex: 1 1 auto;
   font-size: var(--dt-caption-title-size);
   font-weight: var(--dt-caption-title-weight);
@@ -112,6 +82,11 @@
   vertical-align: middle;
 }
 
+.dt-tfoot .dt-th {
+  border-top: 1px solid var(--dt-border-color);
+  border-bottom: none;
+}
+
 .dt-th-sortable {
   cursor: pointer;
   user-select: none;
@@ -121,6 +96,11 @@
 .dt-th-sortable:hover {
   background: var(--dt-row-hover-bg);
   color: var(--dt-text);
+}
+
+.dt-th-sortable:focus-visible {
+  outline: 2px solid var(--dt-loading-accent);
+  outline-offset: -2px;
 }
 
 .dt-td {
@@ -148,8 +128,8 @@
 .dt-sortable {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-start;
+  gap: 0.4rem;
   width: 100%;
 }
 

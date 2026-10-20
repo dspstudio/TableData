@@ -1,0 +1,22 @@
+/* Usage: import this file, then <TableData theme="minimal" /> */
+.dt.dt-theme-minimal {
+  --dt-bg: transparent;
+  --dt-border-radius: 0;
+  --dt-shadow: none;
+  --dt-th-bg: transparent;
+  --dt-caption-padding: 0 1rem 0.75rem;
+  --dt-row-hover-bg: rgb(0 0 0 / 0.025);
+
+  border: none;
+}
+
+.dt.dt-theme-minimal .dt-caption {
+  border-bottom: none;
+}
+
+.dt.dt-theme-minimal .dt-th {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--dt-font-size);
+  border-bottom: 2px solid var(--dt-text);
+}

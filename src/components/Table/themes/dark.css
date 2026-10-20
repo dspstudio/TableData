@@ -1,0 +1,25 @@
+/* Usage: import this file, then <TableData theme="dark" /> */
+.dt.dt-theme-dark {
+  color-scheme: dark;
+
+  --dt-bg: #0f172a;
+  --dt-border-color: #1e293b;
+  --dt-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
+  --dt-text: #e2e8f0;
+  --dt-muted: #94a3b8;
+
+  --dt-th-bg: #111c33;
+  --dt-th-color: #94a3b8;
+  --dt-row-border-color: #1e293b;
+  --dt-row-hover-bg: #1a2540;
+
+  --dt-sort-active: #7dd3fc;
+  --dt-sort-inactive: #475569;
+
+  --dt-loading-track: #1e293b;
+  --dt-loading-accent: #38bdf8;
+
+  --dt-input-bg: #0b1222;
+  --dt-input-border: #334155;
+  --dt-btn-hover-bg: #1e293b;
+}

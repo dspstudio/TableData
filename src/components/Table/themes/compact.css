@@ -1,0 +1,15 @@
+/* Usage: import this file, then <TableData theme="compact" /> */
+.dt.dt-theme-compact {
+  --dt-border-radius: 0.375rem;
+  --dt-shadow: none;
+  --dt-font-size: 0.75rem;
+
+  --dt-caption-padding: 0.5rem 0.75rem;
+  --dt-caption-title-size: 0.9375rem;
+
+  --dt-th-padding: 0.4rem 0.625rem;
+  --dt-cell-padding: 0.3rem 0.625rem;
+
+  --dt-input-radius: 0.25rem;
+  --dt-input-padding: 0.25rem 0.5rem;
+}
