@@ -1,6 +1,8 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, provide } from 'vue';
+import './datatable.css';
+import { mergeClasses } from './classes.js';
 import TableHeader from './Header.vue';
 import TableBody from './Body.vue';
 import TableSearch from './Search.vue';
@@ -59,6 +61,16 @@ const props = defineProps({
       rowTransition: 'fade'
     })
   },
+  /** Extra class names per part — appended onto defaults (see classes.js). */
+  classes: {
+    type: Object,
+    default: () => ({})
+  },
+  /** Skip default `dt-*` theme classes (bare markup for bring-your-own CSS). */
+  unstyled: {
+    type: Boolean,
+    default: false
+  },
   translations: {
     type: Object,
     default: () => ({
@@ -75,75 +87,56 @@ const props = defineProps({
   }
 });
 
+const ui = computed(() => mergeClasses(props.classes, { unstyled: props.unstyled }));
+provide('dtClasses', ui);
+provide('dtUnstyled', computed(() => props.unstyled));
+
 const perPage = ref(props.perPage);
 const currentPage = ref(props.currentPage);
-const totalFound = ref(0);
 const searchValue = ref('');
 const sort = ref(props.initialSortKey);
 const order = ref(props.initialSortOrder);
 
-const computedData = computed(() => {
-  let rows = props.data;
-  const keys = Object.values(computedHeader.value);
+const computedHeader = computed(() => {
+  if (props.columns.length > 0) return props.columns;
 
-  // search 
-  if (searchValue.value != '') {
-    const filteredRows = rows.filter(item => {
-      let isMatch = false;
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        if (key.searchable) {
-          if (item[key.name] == null) continue;
-          if (item[key.name].toString().toLowerCase().includes(searchValue.value.toLowerCase())) {
-            isMatch = true;
-          }
-        }
-      }
+  const firstRow = props.data?.[0];
+  if (!firstRow) return [];
 
-      if (isMatch) { return item; }
-    });
-    rows = filteredRows;
-  }
-
-  // sort
-  const sortedRows = quickSort(rows, sort.value, order.value);
-
-  // pagination
-  (() => {
-    totalFound.value = sortedRows.length;
-    if (currentPage.value >= Math.ceil(totalFound.value / perPage.value)) {
-      currentPage.value = 0;
-    }
-  })()
-
-  const pagedRows = sortedRows.slice(startFrom.value, endTo.value);
-
-  return pagedRows;
+  return Object.keys(firstRow).map(name => ({
+    name,
+    label: name,
+    sortable: false,
+    searchable: false,
+    class: {}
+  }));
 });
 
-const computedHeader = computed(() => {
-  let data = props.data;
-  if (props.columns.length === 0 && data) {
-    return Object.keys(data.at(0)).map(x => {
-      return {
-        name: x,
-        label: x,
-        sortable: false,
-        searchable: false,
-        class: {}
-      }
-    });
-  } else {
-    return props.columns;
+const filteredData = computed(() => {
+  const rows = props.data ?? [];
+  const query = searchValue.value.toLowerCase();
+  if (query === '') return rows;
+
+  const searchableColumns = computedHeader.value.filter(column => column.searchable);
+  return rows.filter(row => searchableColumns.some(column =>
+    row[column.name] != null && row[column.name].toString().toLowerCase().includes(query)
+  ));
+});
+
+const sortedData = computed(() => sortRows(filteredData.value, sort.value, order.value));
+
+const totalFound = computed(() => sortedData.value.length);
+
+const computedData = computed(() => sortedData.value.slice(startFrom.value, endTo.value));
+
+watch([totalFound, perPage], () => {
+  if (currentPage.value >= Math.ceil(totalFound.value / perPage.value)) {
+    currentPage.value = 0;
   }
 });
 
 const computedSearchable = computed(() => {
-  let search = (props.columns.filter(x => x.searchable));
-  if (search.length === 0) {
-    return false;
-  }
-  return props.searchable;
+  return props.searchable && computedHeader.value.some(column => column.searchable);
 });
 
 const startFrom = computed(() => {
@@ -168,36 +161,34 @@ const goToPage = (page) => {
   }
 }
 const sortBy = (key, sortOrder) => {
-  if (props.columns.filter(x => x.name === key && x.sortable).length === 0) return;
+  if (!computedHeader.value.some(column => column.name === key && column.sortable)) return;
 
-  sort.value = key;
-  order.value = sort.value === key ? (order.value === 'asc' ? 'desc' : 'asc') : sortOrder;
-};
-// const sortBy = (key, orderr) => {
-//   if (props.columns.filter(x => x.sortable).length === 0) { return; }
-//   if ( sort.value !== key ) { order.value = orderr || 'asc'; }
-//   else { order.value = ( order.value === 'asc' ) ? 'desc' : 'asc'; }
-//   sort.value = key;
-// }
-
-function quickSort(arr, key, order) {
-  if (arr.length <= 1 || key == null || order == null) {
-    return arr;
+  if (sort.value === key) {
+    order.value = order.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sort.value = key;
+    order.value = sortOrder;
   }
-  // Validate order argument (optional)
-  order = order.toUpperCase() === "DESC" ? -1 : 1;
+};
 
-  return arr.sort((a, b) => {
-    // Access property values using bracket notation
+function sortRows(rows, key, sortOrder) {
+  if (rows.length <= 1 || key == null || sortOrder == null) {
+    return rows;
+  }
+  const direction = sortOrder.toLowerCase() === 'desc' ? -1 : 1;
+
+  // Copy before sorting: Array.prototype.sort mutates, and `rows` may be the parent's prop.
+  return [...rows].sort((a, b) => {
     const valueA = a[key];
     const valueB = b[key];
 
-    // Handle different data types (optional)
-    if (typeof valueA === "string") {
-      return valueA.localeCompare(valueB) * order; // Use localeCompare for proper string comparison
-    } else {
-      return (valueA - valueB) * order;
+    if (valueA == null) return valueB == null ? 0 : 1;
+    if (valueB == null) return -1;
+
+    if (typeof valueA === 'string') {
+      return valueA.localeCompare(String(valueB)) * direction;
     }
+    return (valueA - valueB) * direction;
   });
 }
 
@@ -207,17 +198,22 @@ const setPerPage = (event) => {
 </script>
 
 <template>
-  <section class="dataTableWrapper">
-    <div class="dataTableCaption">
-      <p v-if="caption">{{ caption }}</p>
-      <div v-if="$slots.widgets">
-          <slot name="widgets"></slot>
+  <section :class="ui.root">
+    <div :class="ui.caption">
+      <p v-if="caption" :class="ui.captionTitle">{{ caption }}</p>
+      <div v-if="$slots.widgets" :class="ui.widgets">
+        <slot name="widgets"></slot>
       </div>
-      <TableSearch v-if="computedSearchable" :handleInputSearch="handleInputSearch" :searchValue="searchValue" :translations="translations" />
+      <TableSearch
+        v-if="computedSearchable"
+        :handleInputSearch="handleInputSearch"
+        :searchValue="searchValue"
+        :translations="translations"
+      />
     </div>
-    <div style="overflow-x:auto;"> <!-- for mobile auto scrollbar -->
-      <table class="w-full h-full table-auto lg:table-fixed text-sm text-left">
-        <thead>
+    <div :class="ui.scroll">
+      <table :class="ui.table">
+        <thead :class="ui.thead">
           <TableHeader :columns="computedHeader" :sortBy="sortBy" :order="order" :sort="sort" :translations="translations" />
         </thead>
 
@@ -226,40 +222,56 @@ const setPerPage = (event) => {
         </tbody>
 
         <Transition mode="out-in">
-          <tbody v-if="isLoading">
+          <tbody v-if="isLoading" :class="ui.tbody">
             <tr>
-              <td :colspan="computedHeader.length" class="text-center p-4">
+              <td :colspan="computedHeader.length" :class="ui.loading">
                 <div role="status">
-                    <svg aria-hidden="true" class="inline w-10 h-10 text-gray-200 animate-spin fill-indigo-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg aria-hidden="true" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
                         <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
                     </svg>
-                    <span class="sr-only">{{ translations.loading }}</span>
+                    <span class="dt-sr-only">{{ translations.loading }}</span>
                 </div>
               </td>
             </tr>
           </tbody>
-          <TableBody v-else-if="computedData.length > 0" :options="options" :data="computedData" :columns="computedHeader" :translations="translations" :rowClick="rowClick" class="table-main-body" />
-          <tbody v-else>
+          <TableBody
+            v-else-if="computedData.length > 0"
+            :options="options"
+            :data="computedData"
+            :columns="computedHeader"
+            :translations="translations"
+            :rowClick="rowClick"
+          />
+          <tbody v-else :class="ui.tbody">
             <tr>
-              <td :colspan="computedHeader.length" class="text-center p-4">{{ translations.no_results_found }}</td>
+              <td :colspan="computedHeader.length" :class="ui.empty">{{ translations.no_results_found }}</td>
             </tr>
           </tbody>
         </Transition>
-        
+
         <tbody v-if="$slots.beforeFooter">
           <slot name="beforeFooter"></slot>
         </tbody>
-        
-        <tfoot v-if="showFooter">
+
+        <tfoot v-if="showFooter" :class="ui.tfoot">
           <TableHeader :columns="computedHeader" :sortBy="sortBy" :order="order" :sort="sort" :translations="translations" />
         </tfoot>
-
       </table>
     </div>
-  
+
     <Transition>
-      <TablePagination v-if="!isLoading" :goToPage="goToPage" :setPerPage="setPerPage" :startFrom :endTo :currentPage :totalFound :perPage :translations="translations" />
+      <TablePagination
+        v-if="!isLoading"
+        :goToPage="goToPage"
+        :setPerPage="setPerPage"
+        :startFrom
+        :endTo
+        :currentPage
+        :totalFound
+        :perPage
+        :translations="translations"
+      />
     </Transition>
   </section>
 </template>

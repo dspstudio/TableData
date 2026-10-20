@@ -1,19 +1,43 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-const {data} = defineProps({
+defineProps({
   data: {
     type: Object,
     default: () => ({})
+  },
+  ellipsis: {
+    type: Boolean,
+    default: true
+  },
+  wrap: {
+    type: Boolean,
+    default: false
   }
 });
 </script>
 
 <template>
-  <div class="flex grid-cols-2 auto-rows-max gap-1">
-    <div class="flex w-6 items-center">
-      <img :src="data.avatar" class="h-auto w-6 rounded-full overflow-hidden" />
+  <div
+    class="cell-avatar"
+    :title="ellipsis && !wrap ? data.userName : undefined"
+  >
+    <div class="cell-avatar-img-wrap">
+      <img
+        :src="data.avatar"
+        alt=""
+        width="24"
+        height="24"
+        loading="lazy"
+        decoding="async"
+        class="cell-avatar-img"
+      />
     </div>
-    <div class="truncate">
+    <div
+      :class="[
+        'cell-avatar-name',
+        wrap ? 'dt-wrap' : ellipsis ? 'dt-ellipsis' : 'dt-nowrap'
+      ]"
+    >
       {{ data.userName }}
     </div>
   </div>
