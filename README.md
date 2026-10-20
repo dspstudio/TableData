@@ -16,41 +16,55 @@ The component lives in `src/components/Table/`. Import `Data.vue`; it pulls in i
 
 ## Basic usage
 
-Pass an array of objects. Without `columns`, headers are inferred from the first row's keys.
+Preferred: one `columns` array; each column carries its values in `data`.
 
 ```vue
 <script setup>
 import TableData from './components/Table/Data.vue';
 
-const rows = [
-  { id: 1, firstName: 'Chyna', lastName: 'Cruickshank' },
-  { id: 2, firstName: 'Ada', lastName: 'Lovelace' },
+const columns = [
+  {
+    name: 'email',
+    label: 'Email address',
+    sortable: true,
+    searchable: true,
+    data: ['ada@lovelace.dev', 'alan@turing.test'],
+  },
+  {
+    name: 'firstName',
+    label: 'First Name',
+    sortable: true,
+    searchable: true,
+    data: ['Ada', 'Alan'],
+  },
 ];
 </script>
 
 <template>
-  <TableData :data="rows" />
+  <TableData :columns="columns" searchable />
 </template>
 ```
 
-Pass `:data="null"` to show the loading spinner until rows arrive.
+Still supported: pass row objects as `:data`. Without `columns`, headers are inferred from
+the first row's keys. Loading: `:columns="null"` (columnar) or `:data="null"` (row mode).
 
 ## Columns
 
 ```js
 const columns = [
-  { name: 'id', label: 'ID', width: '4.5rem', class: { th: 'dt-align-center', td: 'dt-align-center' } },
-  { name: 'firstName', label: 'First Name', sortable: true, searchable: true },
-  { name: 'lastName', label: 'Last Name', sortable: true, searchable: true, filterable: true },
-  { name: 'plan', label: 'Plan', filterOptions: ['free', 'basic', 'business'] },
-  { name: 'avatar', label: 'Avatar', component: AvatarCell },
+  { name: 'id', label: 'ID', width: '4.5rem', data: [1, 2], class: { th: 'dt-align-center', td: 'dt-align-center' } },
+  { name: 'firstName', label: 'First Name', sortable: true, searchable: true, data: ['Ada', 'Alan'] },
+  { name: 'avatar', label: 'Avatar', hidden: true, data: ['/a.png', '/b.png'] },
+  { name: 'userName', label: 'Username', component: AvatarCell, data: ['ada', 'alan'] },
 ];
 ```
 
 | Key | Type | Description |
 | --- | --- | --- |
-| `name` | `String` | Field name on each row (required). |
+| `name` | `String` | Field key (required). |
 | `label` | `String` | Header text (defaults to `name`). |
+| `data` | `Array` | Values for this column (one per row). If present on any column, rows are zipped from these arrays. |
+| `hidden` | `Boolean` | Keep in the zipped row but do not render a grid column. |
 | `sortable` | `Boolean` | Click the header (or press Enter/Space) to sort. |
 | `searchable` | `Boolean` | Include in the global search. |
 | `filterable` | `Boolean` | Show a text filter under the header (case-insensitive contains). |
@@ -59,14 +73,14 @@ const columns = [
 | `ellipsis` | `Boolean` | Clip overflowing text with `…` (default `true`, needs `width`). |
 | `wrap` | `Boolean` | Allow text to wrap (default `false`). |
 | `class` | `{ th, td }` | Extra classes for header and body cells. |
-| `component` | `Component` | Cell component; receives `data` (row), `val`, `ellipsis`, `wrap`. |
+| `component` | `Component` | Cell component; receives `data` (row), `val`, `ellipsis`, `wrap`. Use `markRaw(Comp)` if columns are stored in a `ref`. |
 
 ## Props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `data` | `Array \| null` | — | Rows. `null` shows the loading state. |
-| `columns` | `Array` | `[]` | Column definitions (see above). |
+| `columns` | `Array \| null` | `[]` | Column defs (prefer with per-column `data`). `null` = loading. |
+| `data` | `Array \| null` | `null` | Optional row objects when columns have no `data` arrays. `null` = loading. |
 | `caption` | `String` | `''` | Title shown above the table. |
 | `searchable` | `Boolean` | `false` | Show the global search box. |
 | `searchDebounce` | `Number` | `0` | Delay (ms) before search and text filters apply. |

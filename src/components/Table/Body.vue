@@ -73,6 +73,7 @@ const cellTitle = (value, column) => {
   if (value == null || value === '') return undefined;
   return String(value);
 };
+
 </script>
 
 <template>

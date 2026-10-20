@@ -1,7 +1,7 @@
 <script setup>
 import { faker } from '@faker-js/faker/locale/en';
 
-import { onMounted, ref } from 'vue';
+import { computed, markRaw, onMounted, ref } from 'vue';
 import TableData from './components/Table/Data.vue';
 import TdEmail from './components/Email.vue';
 import TdAvatar from './components/Avatar.vue';
@@ -9,8 +9,9 @@ import DeleteButton from './components/DeleteButton.vue';
 import Password from './components/Password.vue';
 import './components/Table/themes/index.css';
 
-const data = ref(null);
 const restData = ref(null);
+/** Full-featured demo: columnar columns (null = loading). */
+const fullColumns = ref(null);
 /** Full-featured demo: last `@row-click` selection. */
 const selectedRow = ref(null);
 const selectedColumn = ref(null);
@@ -33,7 +34,34 @@ const themeDemoData = ref(
   }))
 );
 
-const header = [
+/** Tiny columnar sample shown on the docs page (JSON + live table). */
+const sampleColumns = [
+  {
+    name: 'id',
+    label: 'ID',
+    sortable: true,
+    width: '4rem',
+    data: [1, 2, 3],
+  },
+  {
+    name: 'name',
+    label: 'Name',
+    sortable: true,
+    searchable: true,
+    data: ['Ada Lovelace', 'Alan Turing', 'Grace Hopper'],
+  },
+  {
+    name: 'email',
+    label: 'Email',
+    sortable: true,
+    searchable: true,
+    data: ['ada@lovelace.dev', 'alan@turing.test', 'grace@hopper.navy'],
+  },
+];
+const sampleColumnsJson = JSON.stringify(sampleColumns, null, 2);
+
+/** Schema only — values live in each column’s `data` array after buildColumns(). */
+const columnDefs = [
   {
     name: 'id',
     label: 'ID',
@@ -50,7 +78,19 @@ const header = [
     label: 'Username',
     sortable: true,
     searchable: true,
-    component: TdAvatar,
+    component: markRaw(TdAvatar),
+  },
+  {
+    name: 'avatar',
+    label: 'Avatar',
+    hidden: true,
+    searchable: false,
+  },
+  {
+    name: 'sex',
+    label: 'Sex',
+    hidden: true,
+    searchable: false,
   },
   {
     name: 'email',
@@ -59,7 +99,7 @@ const header = [
     searchable: true,
     ellipsis: false,
     wrap: false,
-    component: TdEmail,
+    component: markRaw(TdEmail),
   },
   {
     name: 'firstName',
@@ -79,7 +119,7 @@ const header = [
     sortable: false,
     searchable: false,
     width: '8rem',
-    component: Password,
+    component: markRaw(Password),
   },
   {
     name: 'delete',
@@ -87,7 +127,7 @@ const header = [
     sortable: false,
     searchable: false,
     width: '4.5rem',
-    component: DeleteButton,
+    component: markRaw(DeleteButton),
     class: {
       th: 'dt-align-center',
       td: 'dt-align-center'
@@ -95,9 +135,13 @@ const header = [
   },
 ];
 
+const fullFeaturedColspan = computed(() =>
+  (fullColumns.value ?? columnDefs).filter((column) => !column.hidden).length
+);
+
 onMounted(() => {
   setTimeout(() => {
-    data.value = generateFakeData(10000);
+    fullColumns.value = buildColumns(generateFakeData(10000));
   }, 1000);
 
   getRESTData();
@@ -122,8 +166,17 @@ const generateFakeData = (count = 1) => {
   }));
 }
 
+/** Attach a `data` array to each column def (one value per row). */
+const buildColumns = (rows) =>
+  columnDefs.map((column) => ({
+    ...column,
+    // Keep cell components non-reactive when nested in `fullColumns` ref.
+    component: column.component ? markRaw(column.component) : undefined,
+    data: rows.map((row) => (column.name === 'delete' ? null : row[column.name])),
+  }));
+
 const regenerateData = () => {
-  data.value = generateFakeData(1000);
+  fullColumns.value = buildColumns(generateFakeData(1000));
   selectedRow.value = null;
   selectedColumn.value = null;
 }
@@ -138,17 +191,20 @@ const fullFeaturedRowClass = (row) => (
 )
 
 const rowClick = (row, item) => {
-  if (item.name === 'delete') {
-    const index = data.value.findIndex(x => x.id === row.id);
-    if (index !== -1 && confirm(`Are you sure you want to delete ${row.userName}?`)) {
-      if (selectedRow.value?.id === row.id) clearSelection();
-      data.value.splice(index, 1);
-    }
-    return;
-  }
-
   selectedRow.value = row;
   selectedColumn.value = item;
+
+  if (item.name !== 'delete' || !fullColumns.value) return;
+
+  const idColumn = fullColumns.value.find((column) => column.name === 'id');
+  const index = idColumn?.data?.findIndex((id) => id === row.id) ?? -1;
+  if (index === -1) return;
+  if (!confirm(`Are you sure you want to delete ${row.userName}?`)) return;
+
+  clearSelection();
+  for (const column of fullColumns.value) {
+    if (Array.isArray(column.data)) column.data.splice(index, 1);
+  }
 }
 
 const getRESTData = async () => {
@@ -175,6 +231,7 @@ const getRESTData = async () => {
       <nav class="docs-toc" aria-label="On this page">
         <a href="#features">Features</a>
         <a href="#usage">Usage</a>
+        <a href="#sample-json">JSON sample</a>
         <a href="#props">Props</a>
         <a href="#columns">Columns</a>
         <a href="#theming">Theming</a>
@@ -207,12 +264,14 @@ const getRESTData = async () => {
           <code>data</code>.
         </li>
         <li>
-          <strong>Auto columns</strong>
-          Omit <code>columns</code> and headers are inferred from the first row’s keys.
+          <strong>Columnar or row data</strong>
+          Put values on each column as <code>data: []</code>, or pass row objects via
+          <code>:data</code> (omit columns to infer headers).
         </li>
         <li>
           <strong>Loading state</strong>
-          Pass <code>:data="null"</code> to show a loading spinner until rows are ready.
+          Pass <code>:columns="null"</code> (columnar) or <code>:data="null"</code> (rows)
+          to show a loading spinner.
         </li>
         <li>
           <strong>Row actions</strong>
@@ -234,21 +293,49 @@ const getRESTData = async () => {
     <section id="usage" class="docs-section">
       <h2>Usage</h2>
       <p>
-        Import <code>TableData</code>, pass <code>:data</code>, and optionally
-        <code>:columns</code> for labels, sort/search flags, classes, and cell components.
+        Preferred: one <code>columns</code> array where each column holds its own
+        <code>data</code> values. The table zips those arrays into rows.
       </p>
 <pre class="docs-code"><code>&lt;TableData
-  :data="rows"
   :columns="columns"
   caption="Users"
   :searchable="true"
   :showFooter="true"
   @row-click="onRowClick"
-/&gt;</code></pre>
+/&gt;
+
+// columns[i] looks like:
+{
+  name: 'email',
+  label: 'Email address',
+  sortable: true,
+  searchable: true,
+  component: TdEmail,
+  data: ['a@x.com', 'b@x.com', /* … */],
+}</code></pre>
       <p class="docs-note">
-        Sorting and search run on the full in-memory array; only the current page is rendered.
-        There is no virtual scrolling yet.
+        Still supported: pass row objects as <code>:data</code> and schema-only
+        <code>:columns</code> (or omit columns to infer headers). Sorting and search run
+        on the full in-memory set; only the current page is rendered.
       </p>
+    </section>
+
+    <section id="sample-json" class="docs-section">
+      <h2>JSON sample</h2>
+      <p>
+        Minimal columnar payload — three columns, three rows. Pass this array as
+        <code>:columns</code>; the table zips the <code>data</code> arrays into rows.
+      </p>
+<pre class="docs-code"><code>{{ sampleColumnsJson }}</code></pre>
+<pre class="docs-code"><code>&lt;TableData :columns="sampleColumns" caption="Sample" :searchable="true" /&gt;</code></pre>
+      <div class="docs-demo">
+        <TableData
+          :columns="sampleColumns"
+          caption="Sample"
+          :searchable="true"
+          :perPage="5"
+        />
+      </div>
     </section>
 
     <section id="props" class="docs-section">
@@ -265,16 +352,22 @@ const getRESTData = async () => {
           </thead>
           <tbody>
             <tr>
-              <td><code>data</code></td>
+              <td><code>columns</code></td>
               <td><code>Array | null</code></td>
-              <td>—</td>
-              <td>Row objects. Use <code>null</code> while loading.</td>
+              <td><code>[]</code></td>
+              <td>
+                Column defs. Prefer each with a <code>data</code> array of values.
+                <code>null</code> = loading. Empty + <code>:data</code> → infer headers.
+              </td>
             </tr>
             <tr>
-              <td><code>columns</code></td>
-              <td><code>Array</code></td>
-              <td><code>[]</code></td>
-              <td>Column definitions. Empty → infer from first row.</td>
+              <td><code>data</code></td>
+              <td><code>Array | null</code></td>
+              <td><code>null</code></td>
+              <td>
+                Optional row objects when columns do not carry <code>data</code> arrays.
+                <code>null</code> = loading (row mode).
+              </td>
             </tr>
             <tr>
               <td><code>caption</code></td>
@@ -440,12 +533,28 @@ const getRESTData = async () => {
             <tr>
               <td><code>name</code></td>
               <td><code>String</code></td>
-              <td>Key on each row object.</td>
+              <td>Field key (and key on zipped row objects).</td>
             </tr>
             <tr>
               <td><code>label</code></td>
               <td><code>String</code></td>
               <td>Header text.</td>
+            </tr>
+            <tr>
+              <td><code>data</code></td>
+              <td><code>Array</code></td>
+              <td>
+                Values for this column, one per row. If any column has <code>data</code>,
+                the table zips them into rows (preferred).
+              </td>
+            </tr>
+            <tr>
+              <td><code>hidden</code></td>
+              <td><code>Boolean</code></td>
+              <td>
+                Omit from the grid but still zip into the row (e.g. <code>avatar</code> /
+                <code>sex</code> for custom cell components).
+              </td>
             </tr>
             <tr>
               <td><code>sortable</code></td>
@@ -460,7 +569,11 @@ const getRESTData = async () => {
             <tr>
               <td><code>component</code></td>
               <td><code>Component</code></td>
-              <td>Custom cell renderer; receives <code>data</code> (row) and <code>val</code>.</td>
+              <td>
+                Custom cell renderer; receives <code>data</code> (row) and
+                <code>val</code>. Wrap with <code>markRaw()</code> if columns live in a
+                <code>ref</code>.
+              </td>
             </tr>
             <tr>
               <td><code>width</code></td>
@@ -501,13 +614,13 @@ const getRESTData = async () => {
   ellipsis: false,
   wrap: false,
   // no width → column grows to fit content
-  component: TdEmail
+  component: TdEmail,
+  data: ['ada@lovelace.dev', 'alan@turing.test'],
 }</code></pre>
       <p class="docs-note">
-        Columns without <code>width</code> auto-size to their content (no per-cell
-        scrollbars). Set <code>width</code> when you want a fixed column; then
-        <code>ellipsis: true</code> (default) clips with <code>…</code>. The table wrapper
-        scrolls horizontally if the whole table is wider than the viewport.
+        All <code>data</code> arrays should be the same length. Columns without
+        <code>width</code> auto-size. Set <code>width</code> for a fixed column; then
+        <code>ellipsis: true</code> (default) clips with <code>…</code>.
       </p>
     </section>
 
@@ -668,8 +781,7 @@ import '@/components/Table/themes/ocean.css'
       </p>
 <pre class="docs-code"><code>&lt;TableData
   caption="Full featured table"
-  :data="data"
-  :columns="header"
+  :columns="fullColumns"
   :searchable="true"
   :showFooter="true"
   theme="sky"
@@ -682,8 +794,7 @@ import '@/components/Table/themes/ocean.css'
           caption="Full featured table"
           theme="sky"
           @row-click="rowClick"
-          :data="data"
-          :columns="header"
+          :columns="fullColumns"
           :searchable="true"
           :showFooter="true"
           :classes="{ row: 'docs-row-clickable', tbody: 'docs-zebra' }"
@@ -696,7 +807,7 @@ import '@/components/Table/themes/ocean.css'
           </template>
           <template #afterHeader>
             <tr>
-              <td :colspan="header.length" class="docs-slot-cell">
+              <td :colspan="fullFeaturedColspan" class="docs-slot-cell">
                 <strong>afterHeader slot</strong>
                 — click any cell to select a row; Delete removes via the same
                 <code>@row-click</code> handler.
@@ -705,7 +816,7 @@ import '@/components/Table/themes/ocean.css'
           </template>
           <template #beforeFooter>
             <tr>
-              <td :colspan="header.length" class="docs-slot-cell">
+              <td :colspan="fullFeaturedColspan" class="docs-slot-cell">
                 <strong>beforeFooter slot</strong>
                 — search only matches columns marked <code>searchable: true</code>
                 (password and delete are excluded).

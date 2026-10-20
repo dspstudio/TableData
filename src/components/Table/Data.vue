@@ -9,12 +9,21 @@ import TableSearch from './Search.vue';
 import TablePagination from './Pagination.vue';
 
 const props = defineProps({
+  /**
+   * Row objects. Optional when each column carries a `data` array (columnar mode).
+   * Pass `null` to show the loading state (row mode).
+   */
   data: {
     type: [Array, null],
-    required: true
+    default: null
   },
+  /**
+   * Column defs. Each may include `data: []` of per-column values; the table zips
+   * those into rows. Use `hidden: true` for fields needed by cell components but
+   * not shown. Pass `null` to show loading in columnar mode.
+   */
   columns: {
-    type: Array,
+    type: [Array, null],
     default() {
       return []
     }
@@ -133,13 +142,19 @@ const handleRowClick = (row, column) => {
   emit('row-click', row, column);
 };
 
-const computedHeader = computed(() => {
+const isColumnar = computed(() =>
+  Array.isArray(props.columns) && props.columns.some((column) => Array.isArray(column.data))
+);
+
+/** All column defs (including hidden). Empty while columns is null (loading). */
+const allColumns = computed(() => {
+  if (props.columns == null) return [];
   if (props.columns.length > 0) return props.columns;
 
   const firstRow = props.data?.[0];
   if (!firstRow) return [];
 
-  return Object.keys(firstRow).map(name => ({
+  return Object.keys(firstRow).map((name) => ({
     name,
     label: name,
     sortable: false,
@@ -148,13 +163,26 @@ const computedHeader = computed(() => {
   }));
 });
 
+/** Columns rendered in thead/tbody (excludes `hidden: true`). */
+const computedHeader = computed(() =>
+  allColumns.value.filter((column) => !column.hidden)
+);
+
+/** Zip column.data arrays into row objects; otherwise use the `data` prop. */
+const tableRows = computed(() => {
+  if (isColumnar.value) {
+    return rowsFromColumnData(props.columns);
+  }
+  return props.data ?? [];
+});
+
 const filteredData = computed(() => {
-  const rows = props.data ?? [];
+  const rows = tableRows.value;
   const query = searchValue.value.toLowerCase();
   if (query === '') return rows;
 
-  const searchableColumns = computedHeader.value.filter(column => column.searchable);
-  return rows.filter(row => searchableColumns.some(column =>
+  const searchableColumns = allColumns.value.filter((column) => column.searchable);
+  return rows.filter((row) => searchableColumns.some((column) =>
     row[column.name] != null && row[column.name].toString().toLowerCase().includes(query)
   ));
 });
@@ -172,7 +200,7 @@ watch([totalFound, perPage], () => {
 });
 
 const computedSearchable = computed(() => {
-  return props.searchable && computedHeader.value.some(column => column.searchable);
+  return props.searchable && allColumns.value.some((column) => column.searchable);
 });
 
 const startFrom = computed(() => {
@@ -184,8 +212,24 @@ const endTo = computed(() => {
 });
 
 const isLoading = computed(() => {
+  if (props.columns == null) return true;
+  if (isColumnar.value) return false;
   return props.data == null;
 });
+
+function rowsFromColumnData(columns) {
+  const withData = columns.filter((column) => Array.isArray(column.data));
+  const length = Math.max(0, ...withData.map((column) => column.data.length));
+
+  return Array.from({ length }, (_, index) => {
+    const row = {};
+    for (const column of withData) {
+      row[column.name] = column.data[index];
+    }
+    if (row.id == null) row.id = index;
+    return row;
+  });
+}
 
 const handleInputSearch = (value) => {
   searchValue.value = value;
@@ -197,7 +241,7 @@ const goToPage = (page) => {
   }
 }
 const sortBy = (key, sortOrder) => {
-  if (!computedHeader.value.some(column => column.name === key && column.sortable)) return;
+  if (!allColumns.value.some((column) => column.name === key && column.sortable)) return;
 
   if (sort.value === key) {
     order.value = order.value === 'asc' ? 'desc' : 'asc';
